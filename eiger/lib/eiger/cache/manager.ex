@@ -1,7 +1,6 @@
 defmodule Eiger.Cache.Manager do
   @moduledoc """
-  Each cached function will be created added as a child of
-  DynamicSupervisor.
+  Each cached function will be created as a child of DynamicSupervisor.
   """
 
   require Logger
@@ -29,18 +28,13 @@ defmodule Eiger.Cache.Manager do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def add(
-        key: key,
-        function: function,
-        ttl: ttl,
-        refresh_interval: refresh_interval
-      ) do
+  def add(key, fun, ttl, refresh_interval) do
     DynamicSupervisor.start_child(
       __MODULE__,
       {Data,
        %{
          key: key,
-         function: function,
+         function: fun,
          ttl: ttl,
          refresh_interval: refresh_interval
        }}

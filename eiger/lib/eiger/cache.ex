@@ -93,7 +93,7 @@ defmodule Eiger.Cache do
   end
 
   def register_function(_fun, _key, ttl, _refresh_interval)
-      when not ttl > 0 do
+      when ttl <= 0 do
     {:error, :ttl_must_be_greater_than_zero}
   end
 
@@ -103,7 +103,7 @@ defmodule Eiger.Cache do
   end
 
   def register_function(_fun, _key, ttl, refresh_interval)
-      when not refresh_interval < ttl do
+      when refresh_interval >= ttl do
     {:error, :refresh_interval_must_be_smaller_than_ttl}
   end
 
@@ -168,13 +168,7 @@ defmodule Eiger.Cache do
   end
 
   defp cache_if_unregistered(false, key, fun, ttl, refresh_interval, cached_funs) do
-    {:ok, pid} =
-      Manager.add(
-        key: key,
-        function: fun,
-        ttl: ttl,
-        refresh_interval: refresh_interval
-      )
+    {:ok, pid} = Manager.add(key, fun, ttl, refresh_interval)
 
     Logger.info(
       msg: "Function added to registry",
