@@ -29,11 +29,12 @@ defmodule Eiger.Cache.Refreshener do
         }) ::
           {:ok,
            %{
-             ttl: number,
+             key: any,
              function: fun :: (any() -> {:ok, any()} | {:error, any()}),
              function_result: any,
+             ttl: number,
              ref: reference(),
-             key: any,
+             first_call: pos_integer(),
              expires_at: number,
              refresh_interval: non_neg_integer
            }}
@@ -48,6 +49,7 @@ defmodule Eiger.Cache.Refreshener do
        function_result: nil,
        ref: task.ref,
        ttl: ttl,
+       first_call: :os.system_time(:millisecond),
        expires_at: expires_at(ttl),
        refresh_interval: refresh_interval
      }}
@@ -64,6 +66,27 @@ defmodule Eiger.Cache.Refreshener do
   end
 
   # ----------------------------------------------------------------------------
+  @impl GenServer
+  def handle_call(
+        :get,
+        _from,
+        %{
+          key: key,
+          function: fun,
+          refresh_interval: refresh_interval,
+          expires_at: expires_at
+        } = state
+      ) do
+    if expired?(expires_at) do
+      task = execute_function(key, fun)
+      cron(refresh_interval)
+
+      {:reply, state, %{state | ref: task.ref}}
+    else
+      {:reply, state, state}
+    end
+  end
+
   @impl GenServer
   def handle_call(:get, _from, state) do
     {:reply, state, state}
@@ -94,12 +117,28 @@ defmodule Eiger.Cache.Refreshener do
 
   # The task completed successfully
   @impl true
-  def handle_info({ref, result}, %{key: key, ref: ref, ttl: ttl} = state) do
+  def handle_info(
+        {ref, result},
+        %{
+          key: key,
+          ref: ref,
+          ttl: ttl,
+          refresh_interval: refresh_interval
+        } = state
+      ) do
     # We don't care about the DOWN message now, so let's demonitor and flush it
     Logger.info("Function #{key} completed successfullly!")
     Process.demonitor(ref, [:flush])
 
-    {:noreply, %{state | ref: nil, function_result: result, expires_at: expires_at(ttl)}}
+    cron(refresh_interval)
+
+    {:noreply,
+     %{
+       state
+       | ref: nil,
+         function_result: result,
+         expires_at: expires_at(ttl)
+     }}
   end
 
   # The task failed
@@ -127,5 +166,10 @@ defmodule Eiger.Cache.Refreshener do
   defp expires_at(ttl) do
     now = :os.system_time(:millisecond)
     now + ttl
+  end
+
+  defp expired?(expires_at) do
+    now = :os.system_time(:millisecond)
+    now > expires_at
   end
 end
