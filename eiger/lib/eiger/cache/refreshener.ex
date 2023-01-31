@@ -108,8 +108,7 @@ defmodule Eiger.Cache.Refreshener do
     {:noreply, %{state | ref: nil}}
   end
 
-  def handle_info(:cron, %{key: key, refresh_interval: refresh_interval} = state) do
-    Logger.info("Refreshing results for #{key}")
+  def handle_info(:cron, %{refresh_interval: refresh_interval} = state) do
     cron(refresh_interval)
     {:noreply, state}
   end
