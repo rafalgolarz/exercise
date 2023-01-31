@@ -187,6 +187,10 @@ defmodule Eiger.Cache do
       count_registered: Functions.count_registered()
     )
 
-    {:reply, :ok, Map.put(cached_funs, key, pid)}
+    if is_map(cached_funs) do
+      {:reply, :ok, Map.put(cached_funs, key, pid)}
+    else
+      {:reply, :ok, %{}}
+    end
   end
 end

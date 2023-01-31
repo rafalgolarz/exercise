@@ -28,5 +28,24 @@ defmodule Eiger.CacheSpeedTest do
       assert Cache.get(:sleep) == {:error, :timeout}
       assert Cache.get(:quick) == {:ok, {:ok, :quick}}
     end
+
+    test "call function when expired" do
+      Cache.register_function(
+        fn ->
+          {:ok, Enum.random(1..100)}
+        end,
+        :expired,
+        10,
+        1
+      )
+
+      Process.sleep(50)
+      res1 = Cache.get(:expired)
+
+      Process.sleep(50)
+      res2 = Cache.get(:expired)
+
+      assert res1 != res2
+    end
   end
 end
