@@ -1,12 +1,13 @@
 defmodule Eiger.Cache.Manager do
   @moduledoc """
+  Manages dynamically created GenServers.
   Each cached function will be created as a child of DynamicSupervisor.
   """
 
   require Logger
 
   use DynamicSupervisor
-  alias Eiger.Cache.Data
+  alias Eiger.Cache.Refreshener
   alias Eiger.Cache.Registry, as: Functions
 
   @spec start_link(any) :: :ignore | {:error, any} | {:ok, pid}
@@ -31,7 +32,7 @@ defmodule Eiger.Cache.Manager do
   def add(key, fun, ttl, refresh_interval) do
     DynamicSupervisor.start_child(
       __MODULE__,
-      {Data,
+      {Refreshener,
        %{
          key: key,
          function: fun,

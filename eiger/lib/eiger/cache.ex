@@ -150,6 +150,7 @@ defmodule Eiger.Cache do
 
   @impl GenServer
   def handle_call({:get, key, timeout}, _from, cached_funs) do
+    # place holder for the actual :get call
     {:reply, :ok, cached_funs}
   end
 

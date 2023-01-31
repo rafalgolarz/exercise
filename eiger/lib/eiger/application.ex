@@ -10,6 +10,7 @@ defmodule Eiger.Application do
     children = [
       # Starts a worker by calling: Eiger.Worker.start_link(arg)
       # {Eiger.Worker, arg}
+      {Task.Supervisor, name: Eiger.TaskSupervisor},
       {Registry, keys: :unique, name: Eiger.Cache.Registry.name()},
       {Eiger.Cache.Manager, []},
       {Eiger.Cache, []}
