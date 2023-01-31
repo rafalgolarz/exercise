@@ -26,7 +26,7 @@ defmodule Eiger.CacheSpeedTest do
       )
 
       assert Cache.get(:sleep) == {:error, :timeout}
-      assert Cache.get(:quick) == {:ok, :quick}
+      assert Cache.get(:quick) == {:ok, {:ok, :quick}}
     end
   end
 end

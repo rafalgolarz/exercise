@@ -97,10 +97,9 @@ defmodule Eiger.Cache.Refreshener do
   def handle_info({ref, result}, %{key: key, ref: ref, ttl: ttl} = state) do
     # We don't care about the DOWN message now, so let's demonitor and flush it
     Logger.info("Function #{key} completed successfullly!")
-    {:ok, res} = result
     Process.demonitor(ref, [:flush])
 
-    {:noreply, %{state | ref: nil, function_result: res, expires_at: expires_at(ttl)}}
+    {:noreply, %{state | ref: nil, function_result: result, expires_at: expires_at(ttl)}}
   end
 
   # The task failed
@@ -109,8 +108,9 @@ defmodule Eiger.Cache.Refreshener do
     {:noreply, %{state | ref: nil}}
   end
 
-  def handle_info(error, state) do
-    Logger.error("inspect(#{error})")
+  def handle_info(:cron, %{key: key, refresh_interval: refresh_interval} = state) do
+    Logger.info("Refreshing results for #{key}")
+    cron(refresh_interval)
     {:noreply, state}
   end
 
@@ -128,10 +128,5 @@ defmodule Eiger.Cache.Refreshener do
   defp expires_at(ttl) do
     now = :os.system_time(:millisecond)
     now + ttl
-  end
-
-  defp expired?(expires_at) do
-    now = :os.system_time(:millisecond)
-    now > expires_at
   end
 end
