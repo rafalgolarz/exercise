@@ -53,14 +53,14 @@ defmodule Eiger.Cache.Refreshener do
      }}
   end
 
-  @spec get(atom, :infinity | non_neg_integer) :: {:reply, any, any}
+  @spec get(atom, :infinity | non_neg_integer) :: any
   def get(key, timeout) do
-    %{function_result: function_result} =
+    %{function_result: function_result, ref: ref} =
       key
       |> Functions.via_tuple()
       |> GenServer.call(:get, timeout)
 
-    {:reply, function_result, function_result}
+    {function_result, ref}
   end
 
   # ----------------------------------------------------------------------------

@@ -130,8 +130,8 @@ defmodule Eiger.Cache do
 
   def get(key, timeout, _opts) when is_integer(timeout) and timeout > 0 do
     if Functions.registered?(key) do
-      res = GenServer.call(__MODULE__, {:get, key, timeout})
-      {:ok, res}
+      {res, ref} = GenServer.call(__MODULE__, {:get, key, timeout})
+      parse_res(res, ref)
     else
       Logger.error("Function #{key} not registered.")
       {:error, :not_registered}
@@ -146,6 +146,9 @@ defmodule Eiger.Cache do
     {:error, :timeout_must_be_greater_than_zero}
   end
 
+  defp parse_res(nil, ref) when is_reference(ref), do: {:error, :timeout}
+  defp parse_res(res, nil), do: {:ok, res}
+
   # ============================================================================
 
   @impl GenServer
@@ -158,7 +161,8 @@ defmodule Eiger.Cache do
   @impl GenServer
   def handle_call({:get, key, timeout}, _from, _cached_funs) do
     Logger.info("Get cached result of #{key} function")
-    Refreshener.get(key, timeout)
+    function_result = Refreshener.get(key, timeout)
+    {:reply, function_result, function_result}
   end
 
   # ============================================================================
